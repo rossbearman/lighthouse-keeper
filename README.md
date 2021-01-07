@@ -7,7 +7,7 @@ Discover and control SteamVR lighthouses (versions 1.0 and 2.0)
 * Bluetooth 4.0/BLE chip (integrated or external), managed by Windows
 
 ### Python Script
-* Python 3
+* Python 3.6
 * bleak BLE library, minimum version 0.10.0
 
 ## Usage and Examples
