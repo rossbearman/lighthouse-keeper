@@ -6,12 +6,19 @@ from bleak import discover, BleakClient
 from output import output
 
 class LighthouseLocator():
-    """Discover lighthouses in the local environment via Bluetooth
+    """Discover lighthouses in the local environment via Bluetooth.
     """
 
     async def discover(self):
+        """Discover all potential lighthouses in the local environment and check that we can control them.
+
+        Returns:
+            list: A collection of valid lighthouses.
+        """
+
         lighthouses = []
         devices = await discover()
+
         for device in devices:
             if device.name.find(LighthouseV1.name_prefix) == 0:
                 potential_lighthouse = LighthouseV1(device.address)
@@ -23,7 +30,7 @@ class LighthouseLocator():
             output.debug(device.address + ": potential " + str(potential_lighthouse.version) + ".0 lighthouse '" + device.name +"'")
             output.debug(device.address + ": signal strength is " + str(device.rssi))
 
-            is_lighthouse = await self.is_device_lighthouse(device, potential_lighthouse)
+            is_lighthouse = await self._is_device_lighthouse(device, potential_lighthouse)
 
             if not is_lighthouse:
                 output.info("Unable to communicate with lighthouse '" + device.name + "' identified by '" + device.address + "'.")
@@ -35,7 +42,16 @@ class LighthouseLocator():
 
         return lighthouses
 
-    async def is_device_lighthouse(self, device, potential_lighthouse):
+    async def _is_device_lighthouse(self, device, potential_lighthouse):
+        """Determine if a device is a lighthouse we can communicate with.
+
+        Args:
+            device (BLEDevice): The lighthouse's BLE device
+            potential_lighthouse (Union[LighthouseV1, LighthouseV2]): An instance of LighthouseV1 or LighthouseV2
+        Returns:
+            bool
+        """
+
         async with BleakClient(device.address) as client:
             try:
                 services = await client.get_services()
@@ -44,12 +60,20 @@ class LighthouseLocator():
                 return False
 
         for service in services:
-            if self.service_has_lighthouse_characteristics(service, potential_lighthouse):
+            if self._service_has_lighthouse_characteristics(service, potential_lighthouse):
                 return True
 
         return False
 
-    def service_has_lighthouse_characteristics(self, service, potential_lighthouse):
+    def _service_has_lighthouse_characteristics(self, service, potential_lighthouse):
+        """Determine if the passed service has the correct characteristics for power management.
+
+        Args:
+            service (BleakGATTServiceCollection): The GATT service collection from a potential lighthouse
+            potential_lighthouse (Union[LighthouseV1, LighthouseV2]): An instance of LighthouseV1 or LighthouseV2
+        Returns:
+            bool
+        """
         if (service.uuid != potential_lighthouse.service):
             return False
 

@@ -8,24 +8,19 @@ from bleak import discover, BleakClient
 from output import output
 
 class Lighthouse(ABC):
-    """The abstract base for the physical Lighthouse devices.
+    """A physical Lighthouse device.
 
-    Attributes
-    ----------
-    address : string
-        The MAC address of the lighthouse
-    version : int
-        The version of SteamVR lighthouse
-    name_prefix : string
-        The prefix to the name of the Bluetooth device
-    service : string
-        The UUID of the GATT service for lighthouse management
-    characteristic : string
-        The UUID of the GATT characteristic for power management
-    characteristic_values : dict
-        A dictionary of bytearrays containing valid power management commands
-    characteristic_states : dict
-        A dictionary of bytearrays containing potential power management states
+    Args:
+        address (str): The MAC address of the lighthouse
+
+    Attributes:
+        address (str): The MAC address of the lighthouse
+        version (int): The version of SteamVR lighthouse
+        name_prefix (str): The prefix to the name of the Bluetooth device
+        service (str): The UUID of the GATT service for lighthouse management
+        characteristic (str): The UUID of the GATT characteristic for power management
+        characteristic_values (dict): A dictionary of bytearrays containing valid power management commands
+        characteristic_states (dict): A dictionary of bytearrays containing potential power management states
     """
 
     version = None
@@ -47,14 +42,10 @@ class Lighthouse(ABC):
         The command references a value in `characteristic_values` to be
         written to the GATT characteristic specified by `characteristic`.
 
-        Parameters
-        ----------
-        loop : AbstractEventLoop
-            The asyncio event loop
-        command : str
-            The command to write to the lighthouse
-        retries : int, optional
-            Max number of times to retry writing to the lighthouse
+        Args:
+            loop: The asyncio event loop
+            command (str): The command to write to the lighthouse
+            retries (int): optional max number of times to retry writing to the lighthouse
         """
 
         if command not in self.characteristic_values:

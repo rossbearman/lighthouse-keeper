@@ -22,10 +22,9 @@ async def run(loop):
             await lighthouse.run_command(loop, ARGS.command)
 
     if ARGS.command == "discover":
-        locator = LighthouseLocator()
-
         output.info("Searching for lighthouses, this may take several minutes.\n")
 
+        locator = LighthouseLocator()
         lighthouses = await locator.discover()
 
         if not lighthouses:
