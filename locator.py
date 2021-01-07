@@ -16,43 +16,50 @@ class LighthouseLocator():
             list: A collection of valid lighthouses.
         """
 
-        lighthouses = []
         devices = await discover()
 
-        for device in devices:
-            if device.name.find(LighthouseV1.name_prefix) == 0:
-                potential_lighthouse = LighthouseV1(device.address)
-            elif device.name.find(LighthouseV2.name_prefix) == 0:
-                potential_lighthouse = LighthouseV2(device.address)
-            else:
-                continue
+        potential_lighthouses = filter(None, map(self._create_lighthouse_from_device, devices))
 
-            output.debug(device.address + ": potential " + str(potential_lighthouse.version) + ".0 lighthouse '" + device.name +"'")
-            output.debug(device.address + ": signal strength is " + str(device.rssi))
+        lighthouses = []
 
-            is_lighthouse = await self._is_device_lighthouse(device, potential_lighthouse)
-
-            if not is_lighthouse:
-                output.info("Unable to communicate with lighthouse '" + device.name + "' identified by '" + device.address + "'.")
-                continue
-
-            lighthouses.append(potential_lighthouse)
-
-            output.info("Found " + str(potential_lighthouse.version) + ".0 lighthouse '"+ device.name +"' identified by '"+ device.address +"'.")
+        for lighthouse in potential_lighthouses:
+            if await self._is_device_lighthouse(lighthouse):
+                lighthouses.append(lighthouse)
 
         return lighthouses
 
-    async def _is_device_lighthouse(self, device, potential_lighthouse):
+    def _create_lighthouse_from_device(self, device):
+        """Create the appropriate Lighthouse object for a given BLEDevice
+
+        Args:
+            device (BLEDevice): A BLEDevice that may or may not be a lighthouse
+        Returns:
+            Union(LighthouseV1, LighthouseV2, None)
+        """
+
+        if device.name.startswith(LighthouseV1.name_prefix):
+            output.debug(device.address + ": potential 1.0 lighthouse '" + device.name +"'")
+            output.debug(device.address + ": signal strength is " + str(device.rssi))
+
+            return LighthouseV1(device.address, device.name)
+        elif device.name.startswith(LighthouseV2.name_prefix):
+            output.debug(device.address + ": potential 2.0 lighthouse '" + device.name +"'")
+            output.debug(device.address + ": signal strength is " + str(device.rssi))
+
+            return LighthouseV2(device.address, device.name)
+        else:
+            return None
+
+    async def _is_device_lighthouse(self, lighthouse):
         """Determine if a device is a lighthouse we can communicate with.
 
         Args:
-            device (BLEDevice): The lighthouse's BLE device
-            potential_lighthouse (Union[LighthouseV1, LighthouseV2]): An instance of LighthouseV1 or LighthouseV2
+            lighthouse (Union[LighthouseV1, LighthouseV2]): An instance of LighthouseV1 or LighthouseV2
         Returns:
             bool
         """
 
-        async with BleakClient(device.address) as client:
+        async with BleakClient(lighthouse.address) as client:
             try:
                 services = await client.get_services()
             except Exception as e:
@@ -60,28 +67,29 @@ class LighthouseLocator():
                 return False
 
         for service in services:
-            if self._service_has_lighthouse_characteristics(service, potential_lighthouse):
+            if self._service_has_lighthouse_characteristics(service, lighthouse):
                 return True
 
         return False
 
-    def _service_has_lighthouse_characteristics(self, service, potential_lighthouse):
+    def _service_has_lighthouse_characteristics(self, service, lighthouse):
         """Determine if the passed service has the correct characteristics for power management.
 
         Args:
             service (BleakGATTServiceCollection): The GATT service collection from a potential lighthouse
-            potential_lighthouse (Union[LighthouseV1, LighthouseV2]): An instance of LighthouseV1 or LighthouseV2
+            lighthouse (Union[LighthouseV1, LighthouseV2]): An instance of LighthouseV1 or LighthouseV2
         Returns:
             bool
         """
-        if (service.uuid != potential_lighthouse.service):
+        if (service.uuid != lighthouse.service):
             return False
 
-        output.debug(potential_lighthouse.address + ": found service '" + service.uuid + "'")
+        output.debug(lighthouse.address + ": found service '" + service.uuid + "'")
 
         for characteristic in service.characteristics:
-            if characteristic.uuid == potential_lighthouse.characteristic:
-                output.debug(potential_lighthouse.address + ": found characteristic '" + characteristic.uuid + "'")
+            if characteristic.uuid == lighthouse.characteristic:
+                output.debug(lighthouse.address + ": found characteristic '" + characteristic.uuid + "'")
+                output.debug(lighthouse.address + ": is a valid " + str(lighthouse.version) + ".0 lighthouse")
                 return True
 
         return False

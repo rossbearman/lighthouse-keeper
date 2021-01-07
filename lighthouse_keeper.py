@@ -13,26 +13,29 @@ async def run(loop):
             PARSER.print_usage()
             sys.exit(sys.argv[0] + ': error: you must specify at least one MAC address when calling `on` or `off`')
 
-        for address in ARGS.lighthouse_addresses:
-            if ARGS.lighthouse_version == 1:
-                lighthouse = LighthouseV1(address)
-            else:
-                lighthouse = LighthouseV2(address)
-
+        for lighthouse in map(create_lighthouse, ARGS.lighthouse_addresses):
             await lighthouse.run_command(loop, ARGS.command)
 
     if ARGS.command == "discover":
         output.info("Searching for lighthouses, this may take several minutes.\n")
 
-        locator = LighthouseLocator()
-        lighthouses = await locator.discover()
+        lighthouses = await LighthouseLocator().discover()
 
         if not lighthouses:
             output.info("No lighthouses found.")
-        else:
-            output.info("Finished.\n")
-            print("If you are using MixedVR Manager, copy the following line to your config.bat:\n")
-            print("set lighthouseMACAddressList=" + " ".join(lighthouse.address for lighthouse in lighthouses))
+            sys.exit()
+
+        for lighthouse in lighthouses:
+            output.info("Found " + str(lighthouse.version) + ".0 lighthouse '"+ lighthouse.name +"' identified by '"+ lighthouse.address +"'.")
+
+        print("\nIf you are using MixedVR Manager, copy the following line to your config.bat:\n")
+        print("set lighthouseMACAddressList=" + " ".join(lighthouse.address for lighthouse in lighthouses))
+
+def create_lighthouse(address):
+    if ARGS.lighthouse_version == 1:
+        return LighthouseV1(address)
+    else:
+        return LighthouseV2(address)
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Discover and control SteamVR lighthouses')
