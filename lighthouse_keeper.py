@@ -13,15 +13,12 @@ async def run(loop):
             PARSER.print_usage()
             sys.exit(sys.argv[0] + ': error: you must specify at least one MAC address when calling `on` or `off`')
 
-        lighthouses = []
-
         for address in ARGS.lighthouse_addresses:
             if ARGS.lighthouse_version == 1:
-                lighthouses.append(LighthouseV1(address))
+                lighthouse = LighthouseV1(address)
             else:
-                lighthouses.append(LighthouseV2(address))
+                lighthouse = LighthouseV2(address)
 
-        for lighthouse in lighthouses:
             await lighthouse.run_command(loop, ARGS.command)
 
     if ARGS.command == "discover":
