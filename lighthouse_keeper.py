@@ -39,11 +39,11 @@ def parse_arguments():
     parser.add_argument('command', choices=['discover', 'on', 'off'],
                         help='The command to execute')
     parser.add_argument('lighthouse_version', choices=[1, 2], type=int, nargs='?', default=0,
-                        help='The version of the lighthouses you wish to communicate with')
+                        help='The version of the lighthouses you wish to send a command to')
     parser.add_argument('lighthouse_addresses', nargs='*', default=[],
                         help='One or more lighthouse MAC addresses')
     parser.add_argument('-d', '--debug', action='store_true',
-                        help='Print out additional information for debugging purposes')
+                        help='Print out and log additional information for debugging purposes')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.3.0',
                         help='Display the version number')
 
