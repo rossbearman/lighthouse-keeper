@@ -4,7 +4,7 @@ import asyncio
 import re
 import sys
 from abc import ABC
-from bleak import discover, BleakClient
+from bleak import BleakClient
 from output import output
 
 class Lighthouse(ABC):
