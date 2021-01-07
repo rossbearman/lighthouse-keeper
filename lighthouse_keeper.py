@@ -3,7 +3,7 @@
 import argparse
 import asyncio
 import sys
-from lighthouse import Lighthouse, LighthouseV1, LighthouseV2
+from lighthouse import LighthouseV1, LighthouseV2
 from locator import LighthouseLocator
 from output import output
 
