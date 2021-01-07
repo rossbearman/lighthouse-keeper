@@ -12,9 +12,11 @@ class Lighthouse(ABC):
 
     Args:
         address (str): The MAC address of the lighthouse
+        name (str, optional): The name of the lighthouse
 
     Attributes:
         address (str): The MAC address of the lighthouse
+        name (str): The name of the lighthouse
         version (int): The version of SteamVR lighthouse
         name_prefix (str): The prefix to the name of the Bluetooth device
         service (str): The UUID of the GATT service for lighthouse management
@@ -30,11 +32,12 @@ class Lighthouse(ABC):
     characteristic_values = {}
     characteristic_states = {}
 
-    def __init__(self, address):
+    def __init__(self, address, name = None):
         if not re.match("[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}", address):
             sys.exit("MAC address '" + address + "' is not valid.")
 
         self.address = address
+        self.name = name
 
     async def run_command(self, loop, command, retries = 10):
         """Write a command to the Lighthouse Bluetooth device.
