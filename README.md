@@ -11,17 +11,16 @@ Discover and control SteamVR lighthouses (versions 1.0 and 2.0)
 * bleak BLE library, minimum version 0.10.0
 
 ## Usage and Examples
-You must specify the lighthouse version you are trying to communicate with as the first argument. Typically, HTC Vive lighthouses with the flat front are version 1.0 and Valve-branded lighthouses with the curved front are 2.0.
 
-Search the local environment for version 1.0 lighthouses: `./lighthouse-keeper.exe 1 discover`
+Search the local environment for lighthouses: `./lighthouse-keeper.exe discover`
 
-Search the local environment for version 2.0 lighthouses: `./lighthouse-keeper.exe 2 discover`
+Once you have the MAC addresses of the lighthouses you wish to control, you must specify the command you wish to send (`on`/`off`), the version of the lighthouses (`1`/`2`) and then a space-separated list of MAC addresses for the devices to send the command to.
 
-Once you have the MAC addresses of the lighthouses you wish to control, you should specify the version (`1`/`2`), the command you wish to send (`on`/`off`) and then a space-separated list of MAC addresses for the devices to send the command to.
+Typically, HTC Vive lighthouses with the flat front are version 1.0 (`1`) and Valve-branded lighthouses with the curved front are 2.0 (`2`). The output of `discover` will tell you which versions it has found.
 
-Turn the specified 1.0 lighthouses on: `./lighthouse-keeper.exe 1 on 80:7A:BF:15:1F:88 80:7A:BF:15:28:8C`
+Turn the specified 1.0 lighthouses on: `./lighthouse-keeper.exe on 1 80:7A:BF:15:1F:88 80:7A:BF:15:28:8C`
 
-Turn the specified 2.0 lighthouses off: `./lighthouse-keeper.exe 2 off FE:D0:49:F5:78:D6 E2:81:7F:AC:2B:ED`
+Turn the specified 2.0 lighthouses off: `./lighthouse-keeper.exe off 2 FE:D0:49:F5:78:D6 E2:81:7F:AC:2B:ED`
 
 ## Troubleshooting
 ### Debug / Verbose Mode

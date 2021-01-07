@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import asyncio
-import os
 import re
 import sys
 from abc import ABC
@@ -13,30 +12,34 @@ class Lighthouse(ABC):
 
     Attributes
     ----------
-    lighthouse_type : int
-        The version of SteamVR lighthouse to search for, 1 or 2
+    address : string
+        The MAC address of the lighthouse
+    version : int
+        The version of SteamVR lighthouse
     name_prefix : string
         The prefix to the name of the Bluetooth device
     service : string
         The UUID of the GATT service for lighthouse management
+    characteristic : string
+        The UUID of the GATT characteristic for power management
     characteristic_values : dict
         A dictionary of bytearrays containing valid power management commands
     characteristic_states : dict
         A dictionary of bytearrays containing potential power management states
     """
 
-    lighthouse_type = None
+    version = None
     name_prefix = ""
     service = ""
     characteristic = ""
     characteristic_values = {}
     characteristic_states = {}
 
-    def __init__(self, mac):
-        if not re.match("[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}", mac):
-            sys.exit("MAC address '" + mac + "' is not valid.")
+    def __init__(self, address):
+        if not re.match("[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}", address):
+            sys.exit("MAC address '" + address + "' is not valid.")
 
-        self.mac = mac
+        self.address = address
 
     async def run_command(self, loop, command, retries = 10):
         """Write a command to the Lighthouse Bluetooth device.
@@ -61,11 +64,11 @@ class Lighthouse(ABC):
 
         for attempt in range(retries):
             if attempt == 0:
-                output.info(self.mac + ": attempting to switch " + command)
+                output.info(self.address + ": attempting to switch " + command)
             else:
-                output.info(self.mac + ": retrying command, attempt #" + str(attempt + 1))
+                output.info(self.address + ": retrying command, attempt #" + str(attempt + 1))
 
-            client = BleakClient(self.mac, loop=loop)
+            client = BleakClient(self.address, loop=loop)
 
             try:
                 await client.connect()
@@ -73,18 +76,18 @@ class Lighthouse(ABC):
                 state = await client.read_gatt_char(self.characteristic)
 
                 if command == "off" and state in self.characteristic_states["off"]:
-                    output.info(self.mac + ": is already off, skipping")
+                    output.info(self.address + ": is already off, skipping")
                     success = True
                     break
 
                 await client.write_gatt_char(self.characteristic, self.characteristic_values[command])
 
                 if command == "on":
-                    output.info(self.mac + ": switched on")
-                if command == "off" and self.lighthouse_type == 1:
-                    output.info(self.mac + ": will enter standby in one minute")
-                if command == "off" and self.lighthouse_type == 2:
-                    output.info(self.mac + ": switched off")
+                    output.info(self.address + ": switched on")
+                if command == "off" and self.version == 1:
+                    output.info(self.address + ": will enter standby in one minute")
+                if command == "off" and self.version == 2:
+                    output.info(self.address + ": switched off")
 
                 success = True
                 break
@@ -97,10 +100,10 @@ class Lighthouse(ABC):
                     output.exception(str(e))
 
         if not success:
-            output.info(self.mac + ": reached max attempts ({}).".format(retries))
+            output.info(self.address + ": reached max attempts ({}).".format(retries))
 
 class LighthouseV1(Lighthouse):
-    lighthouse_type = 1
+    version = 1
     name_prefix = "HTC BS"
     service = "0000cb00-0000-1000-8000-00805f9b34fb"
     characteristic = "0000cb01-0000-1000-8000-00805f9b34fb"
@@ -116,7 +119,7 @@ class LighthouseV1(Lighthouse):
     }
 
 class LighthouseV2(Lighthouse):
-    lighthouse_type = 2
+    version = 2
     name_prefix = "LHB-"
     service = "00001523-1212-efde-1523-785feabcd124"
     characteristic = "00001525-1212-efde-1523-785feabcd124"

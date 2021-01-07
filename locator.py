@@ -1,70 +1,64 @@
 #!/usr/bin/env python3
 
 import asyncio
-import os
-import re
-import sys
 from lighthouse import LighthouseV1, LighthouseV2
 from bleak import discover, BleakClient
 from output import output
 
 class LighthouseLocator():
     """Discover lighthouses in the local environment via Bluetooth
-
-    Attributes
-    ----------
-    lighthouse_type : int
-        The version of SteamVR lighthouse to search for, 1 or 2
     """
-
-    def __init__(self, lighthouse_type):
-        self.lighthouse_type = lighthouse_type
-
-        if lighthouse_type == 1:
-            self.name_prefix = LighthouseV1.name_prefix
-            self.service_id = LighthouseV1.service
-            self.characteristic_id = LighthouseV1.characteristic
-        else:
-            self.name_prefix = LighthouseV2.name_prefix
-            self.service_id = LighthouseV2.service
-            self.characteristic_id = LighthouseV2.characteristic
 
     async def discover(self):
         lighthouses = []
         devices = await discover()
         for device in devices:
-            is_lighthouse = False
-
-            if device.name.find(self.name_prefix) != 0:
+            if device.name.find(LighthouseV1.name_prefix) == 0:
+                potential_lighthouse = LighthouseV1(device.address)
+            elif device.name.find(LighthouseV2.name_prefix) == 0:
+                potential_lighthouse = LighthouseV2(device.address)
+            else:
                 continue
 
-            output.debug("Found potential lighthouse '" + device.name + "' identified by '" + device.address + "'")
-            output.debug(device.address + " signal strength: " + str(device.rssi))
-            services = None
+            output.debug(device.address + ": potential " + str(potential_lighthouse.version) + ".0 lighthouse '" + device.name +"'")
+            output.debug(device.address + ": signal strength is " + str(device.rssi))
 
-            async with BleakClient(device.address) as client:
-                try:
-                    services = await client.get_services()
-                except Exception as e:
-                    output.exception(str(e))
-                    continue
+            is_lighthouse = await self.is_device_lighthouse(device, potential_lighthouse)
 
-            for service in services:
-                if (service.uuid == self.service_id):
-                    output.debug(device.address + " found service: " + service.uuid)
-                    for characteristic in service.characteristics:
-                        if characteristic.uuid == self.characteristic_id:
-                            output.debug(device.address + " found characteristic: " + characteristic.uuid)
-                            output.info("Found lighthouse '"+ device.name +"' identified by '"+ device.address +"'.")
-                            # TODO: warn about low signal strength close to -110
-
-                            if self.lighthouse_type == 1:
-                                lighthouses.append(LighthouseV1(device.address))
-                            else:
-                                lighthouses.append(LighthouseV2(device.address))
-
-                            is_lighthouse = True
             if not is_lighthouse:
                 output.info("Unable to communicate with lighthouse '" + device.name + "' identified by '" + device.address + "'.")
+                continue
+
+            lighthouses.append(potential_lighthouse)
+
+            output.info("Found " + str(potential_lighthouse.version) + ".0 lighthouse '"+ device.name +"' identified by '"+ device.address +"'.")
 
         return lighthouses
+
+    async def is_device_lighthouse(self, device, potential_lighthouse):
+        async with BleakClient(device.address) as client:
+            try:
+                services = await client.get_services()
+            except Exception as e:
+                output.exception(str(e))
+                return False
+
+        for service in services:
+            if self.service_has_lighthouse_characteristics(service, potential_lighthouse):
+                return True
+
+        return False
+
+    def service_has_lighthouse_characteristics(self, service, potential_lighthouse):
+        if (service.uuid != potential_lighthouse.service):
+            return False
+
+        output.debug(potential_lighthouse.address + ": found service '" + service.uuid + "'")
+
+        for characteristic in service.characteristics:
+            if characteristic.uuid == potential_lighthouse.characteristic:
+                output.debug(potential_lighthouse.address + ": found characteristic '" + characteristic.uuid + "'")
+                return True
+
+        return False
+
