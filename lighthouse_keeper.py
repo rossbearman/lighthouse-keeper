@@ -44,7 +44,7 @@ def parse_arguments():
                         help='One or more lighthouse MAC addresses')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Print out additional information for debugging purposes')
-    parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.2.0',
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.3.0',
                         help='Display the version number')
 
     return parser
