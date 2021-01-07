@@ -6,7 +6,6 @@ import sys
 from lighthouse import Lighthouse, LighthouseV1, LighthouseV2
 from locator import LighthouseLocator
 from output import output
-from bleak import discover, BleakClient
 
 async def run(loop):
     if ARGS.command == "on" or ARGS.command == "off":
